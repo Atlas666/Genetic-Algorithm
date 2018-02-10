@@ -77,23 +77,20 @@ int main()
 	//EVOLUTION
 	for (Gen = 1; Gen < totalGen; Gen++)//
 	{
-		static int currentScale = 0;
+		static int currentScale;
 		//Roulette Wheel Selection
-		while (currentScale < popScale)
+		static int chosenIndex;
+		for (currentScale = 0; currentScale < popScale; currentScale++)
 		{
-			static int chosenIndex;
 			chosenIndex = rouletteWheelSelection(sortedFitness);
 			x1s[Gen][currentScale] = x1[Gen][chosenIndex];
 			x2s[Gen][currentScale] = x2[Gen][chosenIndex];
 			x3s[Gen][currentScale] = x3[Gen][chosenIndex];
 			x4s[Gen][currentScale] = x4[Gen][chosenIndex];
-			currentScale++;
 		}
-
 		//crossover
 		for (size_t pop = 0; pop < popScale; pop += 2)
 			crossover(x1s[Gen][pop], x2s[Gen][pop], x3s[Gen][pop], x4s[Gen][pop], x1s[Gen][pop + 1], x1s[Gen][pop + 1], x1s[Gen][pop + 1], x1s[Gen][pop + 1]);
-
 		//mutation
 		for (size_t i = 0; i < popScale; i++)
 		{
@@ -102,7 +99,6 @@ int main()
 			mutation(x3s[Gen][i]);
 			mutation(x4s[Gen][i]);
 		}
-
 		//put temperory population into real population
 		for (size_t pop = 0; pop < popScale; pop++)
 		{
@@ -111,18 +107,16 @@ int main()
 			x3[Gen + 1][pop] = x3s[Gen][pop];
 			x4[Gen + 1][pop] = x4s[Gen][pop];
 		}
-
 		//new population evaluation
 		for (size_t pop = 0; pop < popScale; pop++)
-			fitness[pop] = evaluateFitness(x1[Gen+1][pop], x2[Gen+1][pop], x3[Gen+1][pop], x4[Gen+1][pop]);//②
-		totalFitness = getTotalFitness(fitness);//③
+			fitness[pop] = evaluateFitness(x1[Gen+1][pop], x2[Gen+1][pop], x3[Gen+1][pop], x4[Gen+1][pop]);
+		totalFitness = getTotalFitness(fitness);
 		for (size_t i = 0; i < popScale; i++)
 		{
-			sortedFitness[i].data = fitness[i] / totalFitness;//④⑤
+			sortedFitness[i].data = fitness[i] / totalFitness;
 			sortedFitness[i].index = i;
 		}
 		qsort(sortedFitness, n, sizeof(struct Origin), compare);//sort fitness
-
 		if (bestIndividual < sortedFitness[0].data*totalFitness)//compare Gen i best and Gen i+1 best
 		{
 			bestIndividual = sortedFitness[0].data*totalFitness;
@@ -131,9 +125,6 @@ int main()
 			bestsolution[2] = x3[Gen][sortedFitness[0].index];
 			bestsolution[3] = x4[Gen][sortedFitness[0].index];
 		}
-
-		//reset all the arguments
-		currentScale = 0;
 	}
 	cout << fixed << setprecision(20);
 	for (int i = 0; i < 4; i++)
