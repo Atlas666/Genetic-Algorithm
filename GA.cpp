@@ -184,8 +184,7 @@ int rouletteWheelSelection(struct Origin sortedFitness[])
 	}
 }
 
-void crossover(double& x1, double& x2, double& x3, double& x4
-	,double& y1, double& y2, double& y3, double& y4)
+void crossover(double& x1, double& x2, double& x3, double& x4,double& y1, double& y2, double& y3, double& y4)
 {
 	double random = randomNum(engine);
 	int pos = randomPos(engine);
