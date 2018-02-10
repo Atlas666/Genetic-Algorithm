@@ -1,4 +1,4 @@
-/*	Genetic Algorithm	start from 2018.2.4   */
+﻿/*	Genetic Algorithm	start from 2018.2.4   */
 #include<iostream>
 #include<ctime>
 #include<random>
@@ -14,7 +14,7 @@ uniform_real_distribution<double> randomInd(-5, 5);
 uniform_int_distribution<int> randomPos(1, 3);
 
 //set constant rate and constant number
-const double crossoverRate = 0.6;
+const double crossoverRate = 0.4;
 const double mutationRate = 0.04;
 const int popScale = 100;
 const int totalGen = 1000;
@@ -24,25 +24,21 @@ struct Origin
 {
 	double data;
 	int index;
-} sortedFitness[popScale];// "sortedFitness.data" is the porportion of fitness
+} sortedFitness[popScale];// "sortedFitness[i].data" is the porportion of fitness
 array <double, popScale> fitness = {};
 
 //variable name[Gen][Num]
 //x?s is the population after rolette wheel selection
-array <array<double, popScale>, totalGen + 1> x1, x1s = {};
-array <array<double, popScale>, totalGen + 1> x2, x2s = {};
-array <array<double, popScale>, totalGen + 1> x3, x3s = {};
-array <array<double, popScale>, totalGen + 1> x4, x4s = {};
+array <array<double, popScale>, totalGen + 1> x1, x1s, x2, x2s, x3, x3s, x4, x4s = {};
 
 //GA function declaration
-void initialize(double&, double&, double&, double&);//done
-double evaluateFitness(double, double, double, double);//done
-double getTotalFitness(array<double, popScale>);//done
-int rouletteWheelSelection(struct Origin sortedFitness[]);//done
-void crossover(double&, double&, double&, double&
-	, double&, double&, double&, double&);
-void mutation(double&);//done
-void replace(double&,double&);//done
+void initialize(double&, double&, double&, double&);
+double evaluateFitness(double, double, double, double);
+double getTotalFitness(array<double, popScale>);
+int rouletteWheelSelection(struct Origin sortedFitness[]);
+void crossover(double&, double&, double&, double&, double&, double&, double&, double&);
+void mutation(double&);
+void replace(double&,double&);
 
 //sub function declaration
 int compare(const void *, const void *);//   ???  →→→"NEED MORE RESEARCH!!!←←←  ???
@@ -54,12 +50,10 @@ int main()
 	double totalFitness = 0;
 	double bestIndividual = 0;//
 	array <double, 4> bestsolution = {};
+	const static int n = sizeof(fitness) / sizeof(double);
 
-	//①initialize the population
-	//②calculate fitness
-	//③add fitness
-	//④caculate fitness proportion
-	//⑤input fitness proportion
+	//①initialize the population ②calculate fitness
+	//③add fitness ④caculate fitness proportion ⑤input fitness proportion
 	for (size_t pop = 0; pop < popScale; pop++)
 	{
 		initialize(x1[Gen][pop], x2[Gen][pop], x3[Gen][pop], x4[Gen][pop]);//①
@@ -71,26 +65,23 @@ int main()
 		sortedFitness[i].data = fitness[i] / totalFitness;//④⑤
 		sortedFitness[i].index = i;
 	}
+	qsort(sortedFitness, n, sizeof(struct Origin), compare);//sort fitness
 
-	//sort fitness
-	const static int n= sizeof(fitness) / sizeof(double);
-	qsort(sortedFitness, n, sizeof(struct Origin), compare);
-
-	//keep best individual ???
+	//keep best individual
 	bestIndividual = sortedFitness[0].data*totalFitness;
 	bestsolution[0] = x1[Gen][sortedFitness[0].index];
 	bestsolution[1] = x2[Gen][sortedFitness[0].index];
 	bestsolution[2] = x3[Gen][sortedFitness[0].index];
 	bestsolution[3] = x4[Gen][sortedFitness[0].index];
 
-	//!!EVOLUTION!!
-	for (Gen = 1; Gen < totalGen; Gen++)//                   !!!!!!test for 1st time!!!!!!
+	//EVOLUTION
+	for (Gen = 1; Gen < totalGen; Gen++)//
 	{
-		//Roulette Wheel Selection
 		static int currentScale = 0;
+		//Roulette Wheel Selection
 		while (currentScale < popScale)
 		{
-			int chosenIndex;
+			static int chosenIndex;
 			chosenIndex = rouletteWheelSelection(sortedFitness);
 			x1s[Gen][currentScale] = x1[Gen][chosenIndex];
 			x2s[Gen][currentScale] = x2[Gen][chosenIndex];
@@ -101,11 +92,7 @@ int main()
 
 		//crossover
 		for (size_t pop = 0; pop < popScale; pop += 2)
-		{
-			crossover(x1s[Gen][pop], x2s[Gen][pop], x3s[Gen][pop], x4s[Gen][pop]
-				, x1s[Gen][pop + 1], x1s[Gen][pop + 1]
-				, x1s[Gen][pop + 1], x1s[Gen][pop + 1]);
-		}
+			crossover(x1s[Gen][pop], x2s[Gen][pop], x3s[Gen][pop], x4s[Gen][pop], x1s[Gen][pop + 1], x1s[Gen][pop + 1], x1s[Gen][pop + 1], x1s[Gen][pop + 1]);
 
 		//mutation
 		for (size_t i = 0; i < popScale; i++)
@@ -116,7 +103,7 @@ int main()
 			mutation(x4s[Gen][i]);
 		}
 
-		//input x?s into x?
+		//put temperory population into real population
 		for (size_t pop = 0; pop < popScale; pop++)
 		{
 			x1[Gen + 1][pop] = x1s[Gen][pop];
@@ -127,19 +114,16 @@ int main()
 
 		//new population evaluation
 		for (size_t pop = 0; pop < popScale; pop++)
-		{
 			fitness[pop] = evaluateFitness(x1[Gen+1][pop], x2[Gen+1][pop], x3[Gen+1][pop], x4[Gen+1][pop]);//②
-		}
 		totalFitness = getTotalFitness(fitness);//③
 		for (size_t i = 0; i < popScale; i++)
 		{
 			sortedFitness[i].data = fitness[i] / totalFitness;//④⑤
 			sortedFitness[i].index = i;
 		}
-			//sort fitness
-		qsort(sortedFitness, n, sizeof(struct Origin), compare);
-			//compare Gen i best and Gen i+1 best
-		if (bestIndividual < sortedFitness[0].data*totalFitness)
+		qsort(sortedFitness, n, sizeof(struct Origin), compare);//sort fitness
+
+		if (bestIndividual < sortedFitness[0].data*totalFitness)//compare Gen i best and Gen i+1 best
 		{
 			bestIndividual = sortedFitness[0].data*totalFitness;
 			bestsolution[0] = x1[Gen][sortedFitness[0].index];
@@ -148,15 +132,17 @@ int main()
 			bestsolution[3] = x4[Gen][sortedFitness[0].index];
 		}
 
-
 		//reset all the arguments
 		currentScale = 0;
-		for (size_t i = 0; i < popScale-1; i++)
-			fitness[i] = 0;
+	}
+	cout << fixed << setprecision(20);
+	for (int i = 0; i < 4; i++)
+	{
+		cout << "x" << i + 1 << " = ";
+		cout << bestsolution[i] << endl;
 	}
 	cout << "After " << Gen << " times evolution" << endl;
-	cout << "The maximum value for 1/(x1^2 + x2^2 + x3^2 + x4^2 + 1) is ";
-	cout << bestIndividual << endl;
+	cout << "The maximum value for 1/(x1^2 + x2^2 + x3^2 + x4^2 + 1) is "<< bestIndividual << endl;
 	system("pause");
 }
 
@@ -186,7 +172,6 @@ int rouletteWheelSelection(struct Origin sortedFitness[])
 {
 	double totalProbability = 0;
 	double randomProbabiliy = randomNum(engine);
-
 	//selection
 	for (size_t sortedPop = 0; sortedPop < popScale; sortedPop++)
 	{
@@ -204,7 +189,7 @@ void crossover(double& x1, double& x2, double& x3, double& x4
 {
 	double random = randomNum(engine);
 	int pos = randomPos(engine);
-
+	//crossover
 	if (random < crossoverRate)
 	{
 		switch (pos)
@@ -230,7 +215,7 @@ void crossover(double& x1, double& x2, double& x3, double& x4
 void mutation(double& var)
 {
 	double random = randomNum(engine);
-
+	//mutation
 	if (random < mutationRate)
 	{
 		var = randomInd(engine);
